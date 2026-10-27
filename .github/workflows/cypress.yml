@@ -27,3 +27,11 @@ jobs:
         env:
           CYPRESS_PRACTICE_USERNAME: ${{ secrets.PRACTICE_USERNAME }}
           CYPRESS_PRACTICE_PASSWORD: ${{ secrets.PRACTICE_PASSWORD }}
+
+      - name: Upload Cucumber JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-json-report
+          path: cypress/reports/cucumber-report.json
+          if-no-files-found: warn

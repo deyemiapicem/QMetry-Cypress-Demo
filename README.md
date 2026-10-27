@@ -9,6 +9,8 @@ This project runs Cypress end-to-end tests with the Cucumber preprocessor.
 3. Run the tests with `npm test`.
 
 `cypress.env.json` is ignored by Git and should not be committed.
+The Cucumber JSON results are written to
+`cypress/reports/cucumber-report.json`.
 
 ## Run on GitHub Actions
 
@@ -22,3 +24,7 @@ Secrets and variables > Actions**:
 The workflow passes these secrets to Cypress as environment variables. GitHub
 Actions runs the tests; GitHub Copilot is a coding assistant and does not run
 workflows.
+
+The workflow uploads the Cucumber JSON report as the
+`cucumber-json-report` artifact, including when tests fail. Download that
+artifact from the completed workflow run and import the JSON file into QMetry.

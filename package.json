@@ -15,7 +15,11 @@
   "cypress-cucumber-preprocessor": {
     "stepDefinitions": [
       "cypress/e2e/step-definitions/**/*.{js,ts}"
-    ]
+    ],
+    "json": {
+      "enabled": true,
+      "output": "cypress/reports/cucumber-report.json"
+    }
   },
   "dependencies": {
     "@badeball/cypress-cucumber-preprocessor": "^28.0.1",

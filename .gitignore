@@ -1,4 +1,5 @@
 node_modules/
 cypress.env.json
+cypress/reports/
 cypress/videos/
 cypress/screenshots/
