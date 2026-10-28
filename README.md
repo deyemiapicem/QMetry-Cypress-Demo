@@ -14,17 +14,22 @@ The Cucumber JSON results are written to
 
 ## Run on GitHub Actions
 
-The Cypress workflow runs on pushes and pull requests to `main` and `master`.
+Pull requests to `main` and `master` install dependencies and verify Cypress.
+Credentialed Cypress runs and QMetry uploads run on pushes to those branches so
+pull-request code is not given repository secrets.
+
 In the GitHub repository, add these Actions repository secrets under **Settings >
 Secrets and variables > Actions**:
 
 - `PRACTICE_USERNAME`
 - `PRACTICE_PASSWORD`
+- `QMETRY_API_KEY`
 
-The workflow passes these secrets to Cypress as environment variables. GitHub
-Actions runs the tests; GitHub Copilot is a coding assistant and does not run
-workflows.
+Also add the `QMETRY_API_URL` repository variable with the full QMetry
+automation import endpoint. For the US region, use
+`https://qtmcloud.qmetry.com/rest/api/automation/importresult`; use the
+corresponding endpoint for your tenant's region.
 
-The workflow uploads the Cucumber JSON report as the
-`cucumber-json-report` artifact, including when tests fail. Download that
-artifact from the completed workflow run and import the JSON file into QMetry.
+The workflow passes the practice-test secrets to Cypress, uploads the Cucumber
+JSON artifact, and imports the report into QMetry when the report exists. The
+artifact is retained even when tests fail.

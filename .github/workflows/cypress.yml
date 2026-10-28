@@ -6,8 +6,31 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 jobs:
+  pull-request-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cypress installation
+        run: npx cypress verify
+
   cypress:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -35,3 +58,57 @@ jobs:
           name: cucumber-json-report
           path: cypress/reports/cucumber-report.json
           if-no-files-found: warn
+
+      - name: Import results into QMetry
+        if: always() && hashFiles('cypress/reports/cucumber-report.json') != ''
+        env:
+          QMETRY_API_KEY: ${{ secrets.QMETRY_API_KEY }}
+          QMETRY_API_URL: ${{ vars.QMETRY_API_URL }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+
+          : "${QMETRY_API_KEY:?Add QMETRY_API_KEY as a GitHub Actions secret}"
+          : "${QMETRY_API_URL:?Add QMETRY_API_URL as a repository variable}"
+          case "$QMETRY_API_URL" in
+            https://*) ;;
+            *) echo "QMETRY_API_URL must use HTTPS" >&2; exit 1 ;;
+          esac
+
+          report="cypress/reports/cucumber-report.json"
+          test -s "$report"
+          jq -e 'type == "array"' "$report" >/dev/null
+
+          request_body=$(jq -n \
+            --arg build "$BUILD_NUMBER" \
+            '{
+              format: "cucumber",
+              environment: "GitHub Actions",
+              build: $build,
+              isZip: false,
+              attachFile: true
+            }')
+
+          response=$(curl --fail-with-body --silent --show-error \
+            --request POST \
+            "$QMETRY_API_URL" \
+            --header "Content-Type: application/json" \
+            --header "apiKey: $QMETRY_API_KEY" \
+            --data "$request_body")
+
+          upload_url=$(jq -er '.url | select(type == "string" and startswith("https://"))' <<< "$response")
+          tracking_id=$(jq -er '.trackingId | select(type == "string" and length > 0)' <<< "$response")
+
+          curl --fail-with-body --silent --show-error \
+            --request PUT \
+            "$upload_url" \
+            --header "Content-Type: multipart/form-data" \
+            --data-binary "@$report"
+
+          curl --fail-with-body --silent --show-error \
+            --get "${QMETRY_API_URL%/}/track" \
+            --header "apiKey: $QMETRY_API_KEY" \
+            --data-urlencode "trackingId=$tracking_id" \
+            --output /dev/null
+
+          echo "Report uploaded and QMetry tracking request succeeded."
