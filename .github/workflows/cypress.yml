@@ -64,12 +64,15 @@ jobs:
         env:
           QMETRY_API_KEY: ${{ secrets.QMETRY_API_KEY }}
           QMETRY_API_URL: ${{ vars.QMETRY_API_URL }}
-          BUILD_NUMBER: ${{ github.run_number }}
+          QMETRY_ENVIRONMENT: ${{ vars.QMETRY_ENVIRONMENT }}
+          QMETRY_BUILD: ${{ vars.QMETRY_BUILD }}
         run: |
           set -euo pipefail
 
           : "${QMETRY_API_KEY:?Add QMETRY_API_KEY as a GitHub Actions secret}"
           : "${QMETRY_API_URL:?Add QMETRY_API_URL as a repository variable}"
+          : "${QMETRY_ENVIRONMENT:?Add QMETRY_ENVIRONMENT as a repository variable}"
+          : "${QMETRY_BUILD:?Add QMETRY_BUILD as a repository variable}"
           case "$QMETRY_API_URL" in
             https://*) ;;
             *) echo "QMETRY_API_URL must use HTTPS" >&2; exit 1 ;;
@@ -80,10 +83,11 @@ jobs:
           jq -e 'type == "array"' "$report" >/dev/null
 
           request_body=$(jq -n \
-            --arg build "$BUILD_NUMBER" \
+            --arg environment "$QMETRY_ENVIRONMENT" \
+            --arg build "$QMETRY_BUILD" \
             '{
               format: "cucumber",
-              environment: "GitHub Actions",
+              environment: $environment,
               build: $build,
               isZip: false,
               attachFile: true

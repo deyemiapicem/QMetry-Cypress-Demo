@@ -25,10 +25,19 @@ Secrets and variables > Actions**:
 - `PRACTICE_PASSWORD`
 - `QMETRY_API_KEY`
 
-Also add the `QMETRY_API_URL` repository variable with the full QMetry
-automation import endpoint. For the US region, use
-`https://qtmcloud.qmetry.com/rest/api/automation/importresult`; use the
-corresponding endpoint for your tenant's region.
+Also add these repository variables:
+
+- `QMETRY_API_URL`: the full QMetry automation import endpoint. For the US
+  region, use
+  `https://qtmcloud.qmetry.com/rest/api/automation/importresult`; use the
+  corresponding endpoint for your tenant's region.
+- `QMETRY_ENVIRONMENT`: the exact name of an environment already configured in
+  QMetry.
+- `QMETRY_BUILD`: the exact name of a build already configured in QMetry.
+
+The configured environment and build must already exist in QMetry; the workflow
+does not create them. Do not use the GitHub Actions run number unless a matching
+QMetry build exists for every run.
 
 The workflow passes the practice-test secrets to Cypress, uploads the Cucumber
 JSON artifact, and imports the report into QMetry when the report exists. The
