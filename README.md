@@ -40,5 +40,6 @@ does not create them. Do not use the GitHub Actions run number unless a matching
 QMetry build exists for every run.
 
 The workflow passes the practice-test secrets to Cypress, uploads the Cucumber
-JSON artifact, and imports the report into QMetry when the report exists. The
-artifact is retained even when tests fail.
+JSON artifact, and imports the report into QMetry when the report exists. It
+retries QMetry tracking checks for up to one minute if the import record is not
+available immediately. The artifact is retained even when tests fail.
