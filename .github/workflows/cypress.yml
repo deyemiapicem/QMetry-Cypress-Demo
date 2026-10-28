@@ -89,26 +89,48 @@ jobs:
               attachFile: true
             }')
 
-          response=$(curl --fail-with-body --silent --show-error \
+          response_file=$(mktemp)
+          trap 'rm -f "$response_file"' EXIT
+
+          request_qmetry() {
+            local label="$1"
+            shift
+
+            echo "$label"
+            local status
+            status=$(curl --silent --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              "$@")
+
+            if [[ ! "$status" =~ ^2[0-9]{2}$ ]]; then
+              echo "QMetry request failed with HTTP $status." >&2
+              if test -s "$response_file"; then
+                cat "$response_file" >&2
+              fi
+              return 1
+            fi
+          }
+
+          request_qmetry "Requesting QMetry import" \
             --request POST \
             "$QMETRY_API_URL" \
             --header "Content-Type: application/json" \
             --header "apiKey: $QMETRY_API_KEY" \
-            --data "$request_body")
+            --data "$request_body"
 
-          upload_url=$(jq -er '.url | select(type == "string" and startswith("https://"))' <<< "$response")
-          tracking_id=$(jq -er '.trackingId | select(type == "string" and length > 0)' <<< "$response")
+          upload_url=$(jq -er '.url | select(type == "string" and startswith("https://"))' "$response_file")
+          tracking_id=$(jq -er '.trackingId | select(type == "string" and length > 0)' "$response_file")
 
-          curl --fail-with-body --silent --show-error \
+          request_qmetry "Uploading Cucumber report" \
             --request PUT \
             "$upload_url" \
             --header "Content-Type: multipart/form-data" \
             --data-binary "@$report"
 
-          curl --fail-with-body --silent --show-error \
+          request_qmetry "Checking QMetry import status" \
             --get "${QMETRY_API_URL%/}/track" \
             --header "apiKey: $QMETRY_API_KEY" \
             --data-urlencode "trackingId=$tracking_id" \
-            --output /dev/null
 
           echo "Report uploaded and QMetry tracking request succeeded."
