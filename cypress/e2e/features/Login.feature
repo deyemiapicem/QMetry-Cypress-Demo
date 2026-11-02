@@ -10,4 +10,4 @@ And I enter my password
 
 And I click Login
 
-Then I should see the Home page
+Then I should see the Home page.
