@@ -45,7 +45,7 @@ When(`I enter my password`, () => {
 });
 
 When(`I click Login`, () => {
-    cy.get('#submit').click();
+    cy.get('#submit').clic();
 });
 
 Then(`I should see the Home page`, () => {
